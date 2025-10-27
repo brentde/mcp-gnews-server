@@ -59,10 +59,13 @@ def get_api_key() -> str:
         raise ValueError("Missing GNEWS_API_KEY environment variable.")
     return api_key
 
-async def configure_gnews_request(endpoint: str, params: dict) -> dict:
-    url = f"https://gnews.io/api/v4/{endpoint}"
+async def gnews_request(endpoint: str, params: dict) -> dict:
     api_key = get_api_key()    
+    # Add API key to parameters
     params["apikey"] = api_key
+    # Base URL for GNews API: 
+    base_url = "https://gnews.io/api/v4"
+    url = f"{base_url}/{endpoint}"
     
     try:
         async with httpx.AsyncClient() as client:
@@ -75,6 +78,13 @@ async def configure_gnews_request(endpoint: str, params: dict) -> dict:
                 return data
             else:
                 error_msg = f"GNews API error: {response.status_code}"
+                try:
+                    error_data = response.json()
+                    if "errors" in error_data:
+                        error_msg += f" - {error_data['errors']}"
+                except:
+                    error_msg += f" - {response.text}"
+                
                 logger.error(error_msg)
                 raise Exception(error_msg)
                 
